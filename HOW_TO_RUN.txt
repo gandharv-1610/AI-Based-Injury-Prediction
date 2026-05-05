@@ -1,0 +1,305 @@
+================================================================================
+         GAITSCAN AI — STEP-BY-STEP SETUP & RUN GUIDE (FROM SCRATCH)
+================================================================================
+
+This file walks you through everything needed to get the GaitScan AI system
+running on a brand-new machine, from installing Python to seeing the app in
+your browser.
+
+--------------------------------------------------------------------------------
+PREREQUISITES — What You Need Before Starting
+--------------------------------------------------------------------------------
+
+  1. Python 3.8 or newer
+       Download: https://www.python.org/downloads/
+       During install → CHECK "Add Python to PATH"
+
+  2. pip (comes bundled with Python 3.8+)
+       Verify by opening a terminal and typing:
+           pip --version
+
+  3. Git (optional — only needed if cloning from GitHub)
+       Download: https://git-scm.com/downloads
+
+  4. At least 2 GB of free disk space
+     (for Python packages + model weights)
+
+  5. Windows, macOS, or Linux all work fine.
+
+--------------------------------------------------------------------------------
+STEP 1 — Get the Project Files
+--------------------------------------------------------------------------------
+
+  Option A: If you already have the folder on your machine
+      You are done. Just open the project folder in a terminal:
+
+          cd "d:\SEM 4\AI\AI-Based-Injury-Prediction-main"
+
+  Option B: Clone from GitHub (if hosted there)
+      Open a terminal, navigate where you want the project, then:
+
+          git clone https://github.com/YOUR_USERNAME/AI-Based-Injury-Prediction.git
+          cd AI-Based-Injury-Prediction-main
+
+  After this step, your folder should look like:
+      AI-Based-Injury-Prediction-main/
+          app.py
+          train.py
+          train_dl.py
+          requirements.txt
+          Pressure_Data/       ← 1,440 CSV data files
+          models/              ← empty at first (will be filled after training)
+          utils/
+              data_loader.py
+              dl_model.py
+              feature_extractor.py
+              medical_engine.py
+
+--------------------------------------------------------------------------------
+STEP 2 — Create a Virtual Environment (Recommended)
+--------------------------------------------------------------------------------
+
+  A virtual environment keeps your project dependencies isolated from
+  your system Python. This is STRONGLY recommended.
+
+  In the project folder, run:
+
+      python -m venv venv
+
+  Then ACTIVATE it:
+
+      On Windows:
+          venv\Scripts\activate
+
+      On macOS / Linux:
+          source venv/bin/activate
+
+  You should now see "(venv)" at the start of your terminal prompt.
+  Every command after this runs inside the virtual environment.
+
+  NOTE: You must activate the venv every time you open a new terminal.
+
+--------------------------------------------------------------------------------
+STEP 3 — Install All Required Packages
+--------------------------------------------------------------------------------
+
+  With the virtual environment active, run:
+
+      pip install -r requirements.txt
+
+  This installs:
+      numpy          — numerical computing
+      pandas         — data manipulation
+      scikit-learn   — Random Forest model
+      matplotlib     — plotting support
+      streamlit      — web application framework
+      joblib         — model serialisation
+      torch          — PyTorch deep learning framework
+      torchvision    — image utilities for PyTorch
+      plotly         — interactive charts in the app
+
+  EXPECTED TIME: 3–10 minutes depending on internet speed.
+
+  If you hit a PyTorch error, install it manually using the official command
+  from: https://pytorch.org/get-started/locally/
+  (Choose: Stable | Your OS | pip | Python | CPU)
+
+  Example for CPU-only:
+      pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+--------------------------------------------------------------------------------
+STEP 4 — Train the AI Model
+--------------------------------------------------------------------------------
+
+  The models/ folder starts empty. You MUST train at least one model before
+  the web app can make predictions.
+
+  ── OPTION A: Train the Deep Learning Model (RECOMMENDED) ──────────────────
+
+      python train_dl.py
+
+      What it does:
+        - Loads all 1,440 pressure CSV files from Pressure_Data/
+        - Applies 4x data augmentation → ~5,760 training samples
+        - Trains an SE-ResNet CNN for up to 60 epochs
+        - Uses Mixup, OneCycleLR, Label Smoothing, Gradient Clipping
+        - Saves the best model to: models/pressure_dl_model.pth
+
+      Expected time: 15–40 minutes on CPU | 5–10 minutes with GPU
+
+      You will see output like:
+          ================================================================
+            GaitScan — High-Accuracy Training (SE-ResNet + Mixup + TTA)
+          ================================================================
+          Loading dataset ...
+          Samples loaded : 5760  |  Shape : (5760, 1, 128, 48)
+          ...
+            Ep | Tr-Loss |  Tr-Acc | Val-Loss | Val-Acc |        LR
+          -------------------------------------------------------------------
+             1 |  1.2345 |  65.23% |   1.1234 |  70.00% | 2.000e-05
+             ...
+          Training complete.
+          Best Validation Accuracy: 91.XX%
+          Model saved to: models/pressure_dl_model.pth
+
+  ── OPTION B: Train the Quick Random Forest Model (Fallback) ─────────────
+
+      python train.py
+
+      What it does:
+        - Extracts 16 biomechanical features from each CSV
+        - Trains a 100-tree Random Forest classifier
+        - Saves to: models/pressure_model.pkl
+
+      Expected time: 1–3 minutes
+
+      NOTE: The app automatically uses the DL model if available.
+            The RF model is used as a fallback if the DL model is missing.
+
+--------------------------------------------------------------------------------
+STEP 5 — Run the Web Application
+--------------------------------------------------------------------------------
+
+  Once at least one model is trained, launch the app:
+
+      streamlit run app.py
+
+  Expected output in terminal:
+      You can now view your Streamlit app in your browser.
+      Local URL:  http://localhost:8501
+      Network URL: http://192.168.x.x:8501
+
+  The browser will open automatically. If not, manually open:
+      http://localhost:8501
+
+  To stop the app: press Ctrl+C in the terminal.
+
+--------------------------------------------------------------------------------
+STEP 6 — Using the Application
+--------------------------------------------------------------------------------
+
+  1. UPLOAD A PRESSURE FILE
+       In the left sidebar, click "Browse files"
+       Select any CSV from the Pressure_Data/ folder
+       (e.g., subject1_antalgic_trial1_pressure.csv)
+
+  2. FILL IN PATIENT DETAILS (optional — affects risk scoring)
+       Full Name, Age, Sex, Height (cm), Weight (kg)
+
+  3. VIEW THE RESULTS across 4 tabs:
+
+       Tab 1 — Clinical Report
+           Risk gauge (0–100 score), gait classification,
+           clinical insights, specialist referral, urgency
+
+       Tab 2 — Biomechanics
+           2D heatmap, 3D interactive surface, foot zone
+           breakdown, bilateral load distribution charts
+
+       Tab 3 — Data Analysis
+           Model confidence bars for all 6 classes,
+           all 16 biomechanical features, raw matrix viewer,
+           JSON report download button
+
+       Tab 4 — Medical Insights
+           Affected body regions, treatment recommendations,
+           prescribed physiotherapy exercises, prognosis
+
+  4. DOWNLOAD REPORT
+       In Tab 3, click "Download Clinical Report (JSON)"
+       This saves a complete structured report file.
+
+--------------------------------------------------------------------------------
+FULL COMMAND SUMMARY (Copy-Paste Cheat Sheet)
+--------------------------------------------------------------------------------
+
+  # Navigate to project
+  cd "d:\SEM 4\AI\AI-Based-Injury-Prediction-main"
+
+  # Create + activate virtual environment
+  python -m venv venv
+  venv\Scripts\activate          (Windows)
+  # source venv/bin/activate     (macOS/Linux)
+
+  # Install dependencies
+  pip install -r requirements.txt
+
+  # Train the DL model (recommended)
+  python train_dl.py
+
+  # OR train the RF fallback model (fast)
+  python train.py
+
+  # Run the web app
+  streamlit run app.py
+
+  # Open in browser
+  # http://localhost:8501
+
+--------------------------------------------------------------------------------
+TROUBLESHOOTING
+--------------------------------------------------------------------------------
+
+  PROBLEM: "No module named 'streamlit'"
+  SOLUTION: Make sure your virtual environment is activated and you ran:
+            pip install -r requirements.txt
+
+  PROBLEM: "No module named 'torch'"
+  SOLUTION: Install PyTorch manually:
+            pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+  PROBLEM: App says "No trained model found"
+  SOLUTION: Run python train_dl.py first. The models/ folder must contain
+            pressure_dl_model.pth OR pressure_model.pkl
+
+  PROBLEM: "Saved DL model is incompatible" warning
+  SOLUTION: Delete models/pressure_dl_model.pth and re-run python train_dl.py
+            The app auto-falls back to the RF model in the meantime.
+
+  PROBLEM: Training is very slow
+  SOLUTION: This is normal on CPU. The DL training takes 15–40 minutes.
+            Alternatively, run python train.py for the fast RF model (1–3 min).
+            The RF model also works fine for demonstration purposes.
+
+  PROBLEM: CSV file upload gives a format error
+  SOLUTION: The CSV must be exactly 128 rows × 48 columns of numerical values,
+            comma-separated, no header row.
+            Sample files in Pressure_Data/ are all valid.
+
+  PROBLEM: Port 8501 already in use
+  SOLUTION: Run on a different port:
+            streamlit run app.py --server.port 8502
+
+  PROBLEM: pip install fails on Windows with "Microsoft Visual C++ required"
+  SOLUTION: Install Microsoft C++ Build Tools from:
+            https://visualstudio.microsoft.com/visual-cpp-build-tools/
+
+--------------------------------------------------------------------------------
+SYSTEM REQUIREMENTS (Minimum)
+--------------------------------------------------------------------------------
+
+  CPU         : Any modern dual-core processor (Intel/AMD/Apple Silicon)
+  RAM         : 4 GB minimum | 8 GB recommended for DL training
+  Disk        : 2 GB free space
+  OS          : Windows 10+, macOS 10.15+, Ubuntu 18.04+
+  Python      : 3.8, 3.9, 3.10, or 3.11
+  GPU         : Optional. Training runs on CPU. GPU gives ~4x speedup.
+
+--------------------------------------------------------------------------------
+PROJECT FILES QUICK REFERENCE
+--------------------------------------------------------------------------------
+
+  app.py              → Run this to start the web application
+  train_dl.py         → Run this to train the SE-ResNet deep learning model
+  train.py            → Run this to train the Random Forest baseline model
+  requirements.txt    → All Python package dependencies
+  Pressure_Data/      → 1,440 training CSV files (do not delete)
+  models/             → Trained model weights saved here after training
+  utils/              → Supporting code (model, data loader, feature extractor)
+  PROJECT_DOCUMENTATION.md → Full technical documentation of the system
+  HOW_TO_RUN.txt      → This file
+
+================================================================================
+                        End of Setup Guide
+        For full technical details, see PROJECT_DOCUMENTATION.md
+================================================================================
